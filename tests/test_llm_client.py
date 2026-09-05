@@ -1,7 +1,7 @@
 """
 Tester for LLMClient (llm/llm_client.py).
 
-LLMClient gör nätverksanrop och kräver EVROC_API_KEY. Dessa tester
+LLMClient gör nätverksanrop och kräver LLM_API_KEY. Dessa tester
 säkerställer att:
  - Initiering misslyckas tydligt (ValueError) om nyckel saknas
  - Riktiga API-anrop ALDRIG görs i tester (OpenAI är mockad)
@@ -20,9 +20,9 @@ from trending_news_bot.llm.llm_client import LLMClient
 
 
 def test_init_requires_api_key(isolated_env):
-    # Ingen EVROC_API_KEY i miljön och .env patchad bort → ValueError
+    # Ingen LLM_API_KEY i miljön och .env patchad bort → ValueError
     with patch("trending_news_bot.llm.llm_client.load_dotenv"):
-        with pytest.raises(ValueError, match="EVROC_API_KEY"):
+        with pytest.raises(ValueError, match="LLM_API_KEY"):
             LLMClient()
 
 

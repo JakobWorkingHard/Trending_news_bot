@@ -35,10 +35,10 @@ def tmp_db(tmp_path, monkeypatch):
 @pytest.fixture
 def isolated_env(monkeypatch):
     """
-    Rensar EVROC_API_KEY om den råkar finnas i miljön,
+    Rensar LLM_API_KEY om den råkar finnas i miljön,
     så att tester kan kontrollera nyckeln explicit.
     """
-    monkeypatch.delenv("EVROC_API_KEY", raising=False)
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
     return monkeypatch
 
 
@@ -58,10 +58,10 @@ def mock_openai_client():
 @pytest.fixture
 def llm_with_key(monkeypatch, mock_openai_client):
     """
-    Sätter en fejkad EVROC_API_KEY och patchar load_dotenv så .env
+    Sätter en fejkad LLM_API_KEY och patchar load_dotenv så .env
     inte läses. Returnerar den mockade OpenAI-klienten.
     """
-    monkeypatch.setenv("EVROC_API_KEY", "fake-test-key")
+    monkeypatch.setenv("LLM_API_KEY", "fake-test-key")
     with patch("trending_news_bot.llm.llm_client.load_dotenv"):
         yield mock_openai_client
 

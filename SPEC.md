@@ -106,8 +106,8 @@ Kapslar in LLM-API:et. Använder `openai`-SDK men pekar mot en
 OpenAI-kompatibel endpoint:
 
 - `base_url = "https://models.think.evroc.com/v1"`
-- API-nyckel läses från miljövariabeln `EVROC_API_KEY` (via `load_dotenv()`).
-- Saknas nyckeln kastas `ValueError("EVROC_API_KEY saknas.")` — pipeline
+- API-nyckel läses från miljövariabeln `LLM_API_KEY` (via `load_dotenv()`).
+- Saknas nyckeln kastas `ValueError("LLM_API_KEY saknas.")` — pipeline
   avbryts hårt vid initiering.
 
 `generate_response(system_prompt, user_prompt) -> str` anropar
@@ -174,7 +174,7 @@ Dict `{kategori: [RSS-URL:er]}`. Läsas av `load_sources()` i `ContentManager`.
 
 ### 5.1 LLM-API (OpenAI-kompatibel)
 - Endpoint: `POST https://models.think.evroc.com/v1/chat/completions`
-- Auth: `Authorization: Bearer $EVROC_API_KEY`
+- Auth: `Authorization: Bearer $LLM_API_KEY`
 - Body: `{model, messages: [{role, content}], temperature}`
 - Förväntar svar: `{choices: [{message: {content: str}}]}`
 - Standardmodell: `zai-org/GLM-5.2`
@@ -264,7 +264,7 @@ riktiga API-nycklar. Allt externt mockas.
 
 ### 9.1 Fixtures (`tests/conftest.py`)
 - `tmp_db` — `DatabaseManager` i `tmp_path` (isolerad SQLite).
-- `isolated_env` — rensar `EVROC_API_KEY` ur miljön.
+- `isolated_env` — rensar `LLM_API_KEY` ur miljön.
 - `mock_openai_client` — patchar `OpenAI` i `llm_client`-modulen.
 - `llm_with_key` — sätter fejkad nyckel och patchar `load_dotenv`.
 - `tmp_config` — skapar fejkade `config/`-filer i `tmp_path`.
@@ -298,7 +298,7 @@ Kör med: `pytest` (konfigurerat i `pyproject.toml`:
 
 | Variabel | Syfte | Var den används |
 |---|---|---|
-| `EVROC_API_KEY` | API-nyckel för LLM-endpoint | `llm/llm_client.py` (via `load_dotenv`) |
+| `LLM_API_KEY` | API-nyckel för LLM-endpoint | `llm/llm_client.py` (via `load_dotenv`) |
 
 Se `.env.example` för mall.
 
@@ -309,7 +309,7 @@ Se `.env.example` för mall.
 python -m venv .venv
 .venv\Scripts\activate          # Windows
 pip install -e ".[dev]"
-cp .env.example .env           # Fyll i EVROC_API_KEY
+cp .env.example .env           # Fyll i LLM_API_KEY
 
 # Kör
 python main.py                 # default 24h

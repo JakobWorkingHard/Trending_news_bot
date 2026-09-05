@@ -19,10 +19,10 @@ class LLMClient:
         # Läs in vår .env-fil så att vi får tillgång till hemliga nycklar
         load_dotenv()
 
-        api_key = os.getenv("EVROC_API_KEY")
+        api_key = os.getenv("LLM_API_KEY")
         if not api_key:
-            self.logger.error("EVROC_API_KEY hittades inte i .env-filen!")
-            raise ValueError("EVROC_API_KEY saknas.")
+            self.logger.error("LLM_API_KEY hittades inte i .env-filen!")
+            raise ValueError("LLM_API_KEY saknas.")
 
         # Eftersom Kimis API är byggt på samma standard som OpenAI,
         # kan vi använda OpenAI-klienten men peka den mot valfri

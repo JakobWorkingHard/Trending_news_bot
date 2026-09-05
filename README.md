@@ -80,8 +80,9 @@ utöka med nya skrapor eller LLM-klienter utan att ändra pipelinen.
 ## Krav
 
 - Python ≥ 3.10 (utvecklas mot 3.13.7, se `.python-version`)
-- Ett API-konto hos [evroc](https://models.think.evroc.com) för att få en
-  `EVROC_API_KEY`
+- Ett API-konto hos en OpenAI-kompatibel LLM-provider. Standardkonfigurationen
+  pekar mot [evroc](https://models.think.evroc.com), men kan pekas om till
+  valfri provider via `config/settings.json` — se `llm.base_url`.
 
 ## Installation
 
@@ -98,7 +99,7 @@ pip install -e ".[dev]"
 
 # 3. Skapa din .env-fil från mallen och fyll i API-nyckeln
 cp .env.example .env
-# Redigera .env och sätt EVROC_API_KEY=din-nyckel-här
+# Redigera .env och sätt LLM_API_KEY=din-nyckel-här
 ```
 
 ## Användning
