@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 class LLMClient:
     """
-    Hanterar all kommunikation med vår LLM (Kimi / Moonshot AI).
+    Hanterar all kommunikation med vår LLM.
     """
 
     def __init__(
@@ -24,8 +24,8 @@ class LLMClient:
             self.logger.error("LLM_API_KEY hittades inte i .env-filen!")
             raise ValueError("LLM_API_KEY saknas.")
 
-        # Eftersom Kimis API är byggt på samma standard som OpenAI,
-        # kan vi använda OpenAI-klienten men peka den mot valfri
+        # Detta kräver att vår LLM:s API är byggt på samma standard som OpenAI,
+        # och då kan vi använda OpenAI-klienten men peka den mot valfri
         # OpenAI-kompatibel server (konfigurerbar via settings.json).
         self.client = OpenAI(
             api_key=api_key,
@@ -41,9 +41,9 @@ class LLMClient:
 
     def generate_response(self, system_prompt: str, user_prompt: str) -> str:
         """
-        Skickar prompter till Kimi och returnerar svaret.
+        Skickar prompter till vår LLM och returnerar svaret.
         """
-        self.logger.info("Skickar begäran till Kimi...")
+        self.logger.info("Skickar begäran till vår LLM...")
         self.logger.debug(f"System Prompt: {system_prompt}")
         self.logger.debug(f"User Prompt: {user_prompt[:100]}...") # Loggar bara starten av prompten
 
@@ -58,7 +58,7 @@ class LLMClient:
             )
             
             result = response.choices[0].message.content
-            self.logger.info("Fick svar från Kimi.")
+            self.logger.info("Fick svar från vår LLM.")
             return result
 
         except Exception as e:
