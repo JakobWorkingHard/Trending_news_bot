@@ -1,0 +1,30 @@
+{
+  "data_science": [
+    "https://towardsdatascience.com/feed",
+    "https://www.kdnuggets.com/feed",
+    "https://www.analyticsvidhya.com/feed/",
+    "https://machinelearningmastery.com/feed/",
+    "https://pub.towardsai.net/feed"
+  ],
+  "ai_news": [
+    "https://techcrunch.com/category/artificial-intelligence/feed/",
+    "https://www.artificialintelligence-news.com/feed/",
+    "https://venturebeat.com/category/ai/feed/",
+    "https://www.marktechpost.com/feed/",
+    "https://www.technologyreview.com/feed/",
+    "https://blog.research.google/atom.xml",
+    "https://www.infoq.com/rss/news/",
+    "https://blogs.nvidia.com/feed/",
+    "https://deepmind.google/blog/rss.xml"
+  ],
+  "business_strategy": [
+    "https://www.forbes.com/innovation/ai/feed/",
+    "https://www.zdnet.com/topic/artificial-intelligence/feed/"
+  ],
+  "community": [
+    "https://hnrss.org/newest?q=AI+OR+\"Machine+Learning\"+OR+\"Data+Science\"",
+    "https://www.reddit.com/r/datascience/top/.rss?t=day",
+    "https://www.reddit.com/r/MachineLearning/top/.rss?t=day",
+    "https://www.reddit.com/r/artificial/top/.rss?t=day"
+  ]
+}

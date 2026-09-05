@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trending_news_bot"
+version = "0.1.0"
+description = "Ett OOP-strukturerat verktyg för att skrapa nyheter, spara dem i en databas och identifiera trender via LLM"
+authors = [
+    { name = "Ditt Namn", email = "din.epost@example.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "feedparser",         # För att parsa RSS/Atom-flöden
+    "openai",             # OpenAI-kompatibel SDK för LLM-anrop
+    "python-dotenv",      # Läser in miljövariabler från .env
+    "requests",           # HTTP-klient för robust hämtning av RSS-feeds
+    "trafilatura"         # Fulltext-extraktion från HTML-artiklar
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[project.optional-dependencies]
+dev = ["pytest"]

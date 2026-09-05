@@ -1,0 +1,57 @@
+# --- Hemligheter ---
+.env
+.env.local
+.env.*.local
+
+# --- Virtuella miljöer ---
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Python-cache & byggartefakter ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Test- och typcheck-cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Bygg- och paketeringsartefakter
+*.egg-info/
+*.egg
+build/
+dist/
+
+# --- Runtime-data (skapas av applikationen) ---
+data/articles.db
+data/articles.db-journal
+data/articles.db-wal
+data/articles.db-shm
+data/trend_reports/
+
+# --- Loggar ---
+logs/*.log
+logs/*.log.*
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints/
+
+# --- IDE / redigerare ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Operativsystem ---
+.DS_Store
+Thumbs.db
+desktop.ini
