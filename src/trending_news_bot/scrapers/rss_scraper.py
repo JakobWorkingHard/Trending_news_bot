@@ -169,7 +169,9 @@ class RSSScraper(BaseScraper):
                 "summary": summary 
             })
             
-        self.logger.info(f"Hittade {len(headlines)} nyheter i feeden.")
+        # Räkna hur många nyheter vi hittade i feeden
+        num_headlines = len(headlines)
+        self.logger.info(f"Hittade {num_headlines} nyheter i feeden.")
         return headlines
 
     def fetch_article_content(self, article_url: str) -> str:
@@ -194,5 +196,7 @@ class RSSScraper(BaseScraper):
             self.logger.warning(f"Kunde inte hitta någon artikeltext på: {article_url}")
             return ""
             
-        self.logger.debug(f"Extraherade {len(text)} tecken från artikeln.")
+        # Räkna hur många tecken den extraherade texten består av
+        num_chars = len(text)
+        self.logger.debug(f"Extraherade {num_chars} tecken från artikeln.")
         return text

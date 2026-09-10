@@ -142,10 +142,15 @@ def test_run_pipeline_below_min_articles_skips_llm(tmp_config, mocked_deps):
 def test_run_pipeline_caps_to_max_articles(tmp_config, mocked_deps):
     # Fler än max_articles_for_analysis (50) → kapar till exakt 50 i prompten
     manager = ContentManager()
-    articles = [
-        {"title": f"Artikel {i}", "source_site": "site.com"}
-        for i in range(60)
-    ]
+
+    # Skapa en tom lista med testartiklar
+    articles = []
+
+    # Bygg en artikel per index (vi vill överstiga maxgränsen)
+    for i in range(60):
+        article = {"title": f"Artikel {i}", "source_site": "site.com"}
+        articles.append(article)
+
     manager.db.get_articles_since.return_value = articles
     manager.llm.generate_response.return_value = "Rapport"
 
@@ -153,17 +158,29 @@ def test_run_pipeline_caps_to_max_articles(tmp_config, mocked_deps):
 
     call_args = manager.llm.generate_response.call_args
     user_prompt = call_args.args[1]
-    # Räkna rader som ser ut som artikelrader (börjar med "- ")
-    article_lines = [l for l in user_prompt.split("\n") if l.startswith("- ")]
+    # Skapa en tom lista för artikelraderna i prompten
+    article_lines = []
+
+    # Dela upp prompten i rader och behåll bara artikelraderna
+    for l in user_prompt.split("\n"):
+        if l.startswith("- "):
+            article_lines.append(l)
+
     assert len(article_lines) == 50
 
 
 def test_run_pipeline_uses_default_hours_when_none(tmp_config, mocked_deps):
     # hours=None → ska använda default_hours=24 från settings
     manager = ContentManager()
-    articles = [
-        {"title": f"A{i}", "source_site": "site.com"} for i in range(3)
-    ]
+
+    # Skapa en tom lista med testartiklar
+    articles = []
+
+    # Bygg en artikel per index
+    for i in range(3):
+        article = {"title": f"A{i}", "source_site": "site.com"}
+        articles.append(article)
+
     manager.db.get_articles_since.return_value = articles
     manager.llm.generate_response.return_value = "Rapport"
 
@@ -212,9 +229,15 @@ def test_save_trend_report_writes_file(tmp_config, mocked_deps):
     )
 
     manager = ContentManager()
-    articles = [
-        {"title": f"A{i}", "source_site": "site.com"} for i in range(3)
-    ]
+
+    # Skapa en tom lista med testartiklar
+    articles = []
+
+    # Bygg en artikel per index
+    for i in range(3):
+        article = {"title": f"A{i}", "source_site": "site.com"}
+        articles.append(article)
+
     manager.db.get_articles_since.return_value = articles
     manager.llm.generate_response.return_value = "Min trendrapport"
 

@@ -45,7 +45,9 @@ class LLMClient:
         """
         self.logger.info("Skickar begäran till vår LLM...")
         self.logger.debug(f"System Prompt: {system_prompt}")
-        self.logger.debug(f"User Prompt: {user_prompt[:100]}...") # Loggar bara starten av prompten
+        # Loggar bara starten av prompten för att undvika för mycket output
+        prompt_preview = user_prompt[:100]
+        self.logger.debug(f"User Prompt: {prompt_preview}...")
 
         try:
             response = self.client.chat.completions.create(

@@ -88,7 +88,9 @@ class ContentManager:
                 for item in headlines:
                     article_url = item["url"]
                     if self.db.is_url_seen(article_url):
-                        self.logger.debug(f"Dubblett ignorerad: {item['title']}")
+                        # Hämta titeln separat så loggmeddelandet blir tydligt
+                        duplicate_title = item["title"]
+                        self.logger.debug(f"Dubblett ignorerad: {duplicate_title}")
                         continue
 
                     # Hämta fulltext; fall tillbaka på RSS-summary om det misslyckas.
@@ -125,22 +127,29 @@ class ContentManager:
         min_articles = trend_cfg.get("min_articles_for_analysis", 3)
         max_articles = trend_cfg.get("max_articles_for_analysis", 50)
 
-        if len(recent_articles) < min_articles:
+        # Räkna antalet artiklar som hämtats från databasen
+        num_recent_articles = len(recent_articles)
+
+        # Hoppa över analysen om vi har för få artiklar
+        if num_recent_articles < min_articles:
             self.logger.info(
-                f"Endast {len(recent_articles)} artiklar (krav: {min_articles}). "
+                f"Endast {num_recent_articles} artiklar (krav: {min_articles}). "
                 f"Hoppar över trendanalys för att spara LLM-kostnader."
             )
             return
 
-        if len(recent_articles) > max_articles:
+        # Kapa listan om vi har för många artiklar
+        if num_recent_articles > max_articles:
             self.logger.warning(
-                f"{len(recent_articles)} artiklar överstiger max {max_articles}. "
+                f"{num_recent_articles} artiklar överstiger max {max_articles}. "
                 f"Kapar till de {max_articles} nyaste."
             )
             recent_articles = recent_articles[:max_articles]
+            # Uppdatera räknaren eftersom listan nu är kortare
+            num_recent_articles = len(recent_articles)
 
         self.logger.info(
-            f"Hittade {len(recent_articles)} artiklar från senaste {hours}h. "
+            f"Hittade {num_recent_articles} artiklar från senaste {hours}h. "
             f"Skickar till LLM för trendanalys..."
         )
 
@@ -148,11 +157,17 @@ class ContentManager:
         articles_format = trend_cfg.get(
             "articles_format_template", "- {title} (Sajt: {source_site})"
         )
-        articles_text = "\n".join(
-            articles_format.replace("{title}", a["title"])
-                           .replace("{source_site}", a["source_site"])
-            for a in recent_articles
-        )
+
+        # Bygg en lista med formaterade artikelrader
+        formatted_lines = []
+        for a in recent_articles:
+            # Byt ut platsmarkörerna mot aktuell artikels titel och källsajt
+            line = articles_format.replace("{title}", a["title"])
+            line = line.replace("{source_site}", a["source_site"])
+            formatted_lines.append(line)
+
+        # Slå ihop alla rader med radbrytning emellan
+        articles_text = "\n".join(formatted_lines)
 
         user_template = trend_cfg.get(
             "user_prompt_template", "Här är dagens nyhetsrubriker:\n{articles}"
@@ -191,7 +206,9 @@ class ContentManager:
         try:
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(f"# Trendanalys (senaste {hours} timmarna)\n\n")
-                f.write(f"_Genererad {datetime.now(timezone.utc).isoformat()}_\n\n")
+                # Skapa en tidsstämpel för när rapporten genererades
+                generated_at = datetime.now(timezone.utc).isoformat()
+                f.write(f"_Genererad {generated_at}_\n\n")
                 f.write("---\n\n")
                 f.write(report)
             self.logger.info(f"Sparade trendrapport till {filename}")

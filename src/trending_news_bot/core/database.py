@@ -85,7 +85,17 @@ class DatabaseManager:
                 cursor = conn.cursor()
                 cursor.execute(query, (cutoff,))
                 rows = cursor.fetchall()
-                return [{"title": r["title"], "source_site": r["source_site"]} for r in rows]
+
+                # Bygg en lista med dictionaries för varje artikelrad
+                articles = []
+                for r in rows:
+                    # Plocka ut titeln och källsajten från aktuell rad
+                    article = {
+                        "title": r["title"],
+                        "source_site": r["source_site"],
+                    }
+                    articles.append(article)
+                return articles
         except Exception as e:
             self.logger.error(f"Kunde inte hämta artiklar från databasen: {e}")
             return []
@@ -103,10 +113,9 @@ class DatabaseManager:
         query = "DELETE FROM articles WHERE scraped_at < ?"
         try:
             with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, (cutoff,))
+                 # conn.execute returnerar automatiskt en cursor i sqlite3
+                cursor = conn.execute(query, (cutoff,))
                 deleted = cursor.rowcount
-                conn.commit()
             if deleted:
                 self.logger.info(f"Raderade {deleted} artiklar äldre än {days} dagar.")
             return deleted

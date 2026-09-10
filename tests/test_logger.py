@@ -33,13 +33,27 @@ def test_setup_logging_no_duplicate_handlers(tmp_path, monkeypatch):
     setup_logging()
     setup_logging()
 
-    handlers = [h for h in root.handlers
-                if isinstance(h, (logging.FileHandler, logging.StreamHandler))]
+    # Samla de handlers som är antingen FileHandler eller StreamHandler
+    handlers = []
+    for h in root.handlers:
+        if isinstance(h, (logging.FileHandler, logging.StreamHandler)):
+            handlers.append(h)
+
     assert len(handlers) == 2
-    # En ska vara FileHandler, en StreamHandler
-    assert sum(1 for h in handlers if isinstance(h, logging.FileHandler)) == 1
-    assert sum(1 for h in handlers if isinstance(h, logging.StreamHandler)
-               and not isinstance(h, logging.FileHandler)) == 1
+
+    # Räkna hur många av dem som är FileHandler
+    num_file_handlers = 0
+    for h in handlers:
+        if isinstance(h, logging.FileHandler):
+            num_file_handlers += 1
+    assert num_file_handlers == 1
+
+    # Räkna hur många som är StreamHandler men inte FileHandler
+    num_stream_handlers = 0
+    for h in handlers:
+        if isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler):
+            num_stream_handlers += 1
+    assert num_stream_handlers == 1
 
 
 def test_setup_logging_skipped_when_handlers_exist(tmp_path, monkeypatch):
@@ -63,5 +77,9 @@ def test_setup_logging_skipped_when_handlers_exist(tmp_path, monkeypatch):
     # Vår pre-existing handler ska finnas kvar...
     assert pre_existing in root.handlers
     # ...men setup_loggings egna handlers ska INTE ha lagts till.
-    file_handlers = [h for h in root.handlers if isinstance(h, logging.FileHandler)]
+    # Samla alla FileHandler-handlers som finns kvar på root-loggern
+    file_handlers = []
+    for h in root.handlers:
+        if isinstance(h, logging.FileHandler):
+            file_handlers.append(h)
     assert file_handlers == []

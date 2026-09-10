@@ -19,7 +19,7 @@
     "default_hours": 24
   },
   "database": {
-    "retention_days": 30
+    "retention_days": 4
   },
   "output": {
     "save_trend_report": true

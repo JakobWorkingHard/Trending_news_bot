@@ -116,7 +116,15 @@ def test_get_articles_since_orders_descending(tmp_db):
     _insert_with_timestamp(tmp_db, "http://a.com/3", "Nyast", "a.com", t1)
 
     recent = tmp_db.get_articles_since(hours=24)
-    titles = [r["title"] for r in recent]
+
+    # Skapa en tom lista för att samla titlarna
+    titles = []
+
+    # Gå igenom varje artikel och plocka ut titeln
+    for r in recent:
+        current_title = r["title"]
+        titles.append(current_title)
+
     assert titles == ["Nyast", "Mellan", "Äldst"]
 
 
