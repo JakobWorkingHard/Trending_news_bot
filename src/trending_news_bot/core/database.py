@@ -21,6 +21,12 @@ class DatabaseManager:
     def _get_connection(self):
         return sqlite3.connect(self.db_path)
 
+    def _utc_cutoff(self, **delta_kwargs) -> str:
+        """Returnerar nu-minus-delta som UTC-sträng för SQL WHERE-satser."""
+        return (datetime.now(timezone.utc) - timedelta(**delta_kwargs)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
     def _create_tables(self):
         query = """
         CREATE TABLE IF NOT EXISTS articles (
@@ -34,9 +40,7 @@ class DatabaseManager:
         """
         try:
             with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query)
-                conn.commit()
+                conn.execute(query)
         except Exception as e:
             self.logger.error(f"Fel vid skapande av tabeller: {e}")
 
@@ -44,9 +48,7 @@ class DatabaseManager:
         query = "SELECT 1 FROM articles WHERE url = ?"
         try:
             with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, (url,))
-                return cursor.fetchone() is not None
+                return conn.execute(query, (url,)).fetchone() is not None
         except Exception as e:
             self.logger.error(f"Fel vid sökning efter URL {url}: {e}")
             return False
@@ -58,9 +60,7 @@ class DatabaseManager:
         )
         try:
             with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query, (url, title, content, source_site))
-                conn.commit()
+                conn.execute(query, (url, title, content, source_site))
             self.logger.debug(f"Sparade ny artikel från {source_site}: {title}")
         except sqlite3.IntegrityError:
             self.logger.warning(f"Artikeln finns redan: {url}")
@@ -72,9 +72,7 @@ class DatabaseManager:
         Hämtar alla artiklar som skrapats inom de senaste 'hours' timmarna.
         Returnerar en lista med dictionaries innehållande 'title' och 'source_site'.
         """
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        cutoff = self._utc_cutoff(hours=hours)
         query = (
             "SELECT title, source_site FROM articles "
             "WHERE scraped_at >= ? ORDER BY scraped_at DESC"
@@ -82,9 +80,7 @@ class DatabaseManager:
         try:
             with self._get_connection() as conn:
                 conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute(query, (cutoff,))
-                rows = cursor.fetchall()
+                rows = conn.execute(query, (cutoff,)).fetchall()
 
                 # Bygg en lista med dictionaries för varje artikelrad
                 articles = []
@@ -107,9 +103,7 @@ class DatabaseManager:
         """
         if days is None or days <= 0:
             return 0
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        cutoff = self._utc_cutoff(days=days)
         query = "DELETE FROM articles WHERE scraped_at < ?"
         try:
             with self._get_connection() as conn:

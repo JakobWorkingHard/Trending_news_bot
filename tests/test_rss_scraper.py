@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, MagicMock
 
 # Importera dina funktioner/klasser. (Ändra 'rss_scraper' till vad din fil heter)

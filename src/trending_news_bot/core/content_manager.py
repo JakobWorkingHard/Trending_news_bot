@@ -19,8 +19,8 @@ class ContentManager:
         self.settings_path = Path("config/settings.json")
 
         # Ladda settings en gång och konfigurera LLM med model/temperature
-        settings = self.load_settings()
-        llm_cfg = settings.get("llm", {})
+        self._settings = self.load_settings()
+        llm_cfg = self._settings.get("llm", {})
         self.llm = LLMClient(
             model=llm_cfg.get("model", "zai-org/GLM-5.2"),
             temperature=llm_cfg.get("temperature", 0.7),
@@ -53,7 +53,7 @@ class ContentManager:
         if not sources:
             return
 
-        settings = self.load_settings()
+        settings = self._settings
         scraping_cfg = settings.get("scraping", {})
         trend_cfg = settings.get("trend_analysis", {})
         db_cfg = settings.get("database", {})
@@ -201,14 +201,13 @@ class ContentManager:
         """Sparar en trendrapport till data/trend_reports/ med tidsstämpel."""
         report_dir = Path("data/trend_reports")
         report_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+        now = datetime.now(timezone.utc)
+        timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
         filename = report_dir / f"trend_{timestamp}.md"
         try:
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(f"# Trendanalys (senaste {hours} timmarna)\n\n")
-                # Skapa en tidsstämpel för när rapporten genererades
-                generated_at = datetime.now(timezone.utc).isoformat()
-                f.write(f"_Genererad {generated_at}_\n\n")
+                f.write(f"_Genererad {now.isoformat()}_\n\n")
                 f.write("---\n\n")
                 f.write(report)
             self.logger.info(f"Sparade trendrapport till {filename}")

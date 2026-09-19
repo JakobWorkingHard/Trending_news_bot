@@ -1,3 +1,4 @@
+import logging
 import feedparser
 import requests
 import trafilatura
@@ -5,7 +6,6 @@ from configparser import ConfigParser
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import List, Dict
-from .base_scraper import BaseScraper
 
 # Vissa sajter (t.ex. VentureBeat) blockerar requests utan en "riktig"
 # User-Agent. feedparser och trafilatura använder annars standard-agenter
@@ -20,15 +20,6 @@ _USER_AGENT = (
 # webbläsar-spoofs OCH feedparsers standard-agent. De vitlistar dock
 # feed-readers som Feedly/Inoreader (för att feeden ska syndikeras korrekt).
 _FEED_USER_AGENT = "Feedly/1.0 (+https://feedly.com)"
-
-# Browser-headers som används vid artikelnedladdning. Många sajter
-# bot-blockerar om man bara skickar User-Agent utan tillhörande headers
-# som en riktig webbläsare skulle skicka.
-_HTTP_HEADERS = {
-    "User-Agent": _USER_AGENT,
-    "Accept": "application/rss+xml, application/xml, text/xml, */*",
-    "Accept-Language": "en-US,en;q=0.9,sv;q=0.8",
-}
 
 # Headers specifikt för feed-hämtning. Använder Feedly-User-Agent.
 _FEED_HEADERS = {
@@ -109,7 +100,7 @@ def extract_source_site(url: str) -> str:
         netloc = netloc[4:]
     return netloc
 
-class RSSScraper(BaseScraper):
+class RSSScraper:
     """
     En universell skrapa för alla sajter som erbjuder RSS-feeds.
     """
@@ -121,7 +112,9 @@ class RSSScraper(BaseScraper):
         max_retries: int = _DEFAULT_MAX_RETRIES,
         feed_timeout: int = _DEFAULT_FEED_TIMEOUT,
     ):
-        super().__init__(feed_url)
+        self.base_url = feed_url
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info(f"Initierar skrapa för: {self.base_url}")
         self._download_config = _build_trafilatura_config(
             download_timeout, max_retries
         )

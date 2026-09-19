@@ -7,9 +7,15 @@ Loggningssystemet måste:
    (annars dubbleras varje loggrad i filen/terminalen)
 """
 import logging
-from pathlib import Path
 
 from trending_news_bot.core.logger import setup_logging
+
+
+def _clear_root_handlers():
+    """Rensar root-loggerns handlers (måste göras i testkroppen, efter pytest setup)."""
+    root = logging.getLogger()
+    for h in list(root.handlers):
+        root.removeHandler(h)
 
 
 def test_setup_logging_creates_logfile(tmp_path, monkeypatch):
@@ -26,13 +32,12 @@ def test_setup_logging_no_duplicate_handlers(tmp_path, monkeypatch):
     # Vi rensar befintliga handlers först så vi testar setup_logging isolerat
     # (pytest har annars en egen handler på root-loggern vid testkörning).
     monkeypatch.chdir(tmp_path)
+    _clear_root_handlers()
+
+    setup_logging()
+    setup_logging()
+
     root = logging.getLogger()
-    for h in list(root.handlers):
-        root.removeHandler(h)
-
-    setup_logging()
-    setup_logging()
-
     handlers = [h for h in root.handlers
                 if isinstance(h, (logging.FileHandler, logging.StreamHandler))]
     assert len(handlers) == 2
@@ -51,11 +56,10 @@ def test_setup_logging_skipped_when_handlers_exist(tmp_path, monkeypatch):
     # logging före setup_logging körs. Vill du ha robusthet får du byta
     # guarden mot t.ex. en flagga på funktionen/attribut på root-loggern.
     monkeypatch.chdir(tmp_path)
-    root = logging.getLogger()
-    for h in list(root.handlers):
-        root.removeHandler(h)
+    _clear_root_handlers()
     # Simulera att ett bibliotek redan lagt en handler
     pre_existing = logging.StreamHandler()
+    root = logging.getLogger()
     root.addHandler(pre_existing)
 
     setup_logging()

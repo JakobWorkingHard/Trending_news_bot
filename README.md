@@ -66,16 +66,16 @@ RSS-feeds (sources.json)
 
 Projektet är byggt i lager med tydligt separerat ansvar:
 
-- **`scrapers/`** — datainhämtning. `BaseScraper` är en abstrakt basklass som
-  tvingar subklasser att implementera `fetch_headlines` och
-  `fetch_article_content`. `RSSScraper` är den konkreta implementationen.
+- **`scrapers/`** — datainhämtning. `RSSScraper` hanterar
+  `fetch_headlines` (RSS-parsning via `feedparser`) och
+  `fetch_article_content` (fulltext via `trafilatura`).
 - **`core/`** — affärslogik. `ContentManager` är dirigenten som orkestrerar
   hela pipelinen. `DatabaseManager` hanterar SQLite och dubblettkontroll.
   `setup_logging` konfigurerar global loggning.
 - **`llm/`** — `LLMClient` kapslar in all kommunikation med LLM-API:et.
 
 Alla klasser instansieras via `ContentManager`, vilket gör systemet lätt att
-utöka med nya skrapor eller LLM-klienter utan att ändra pipelinen.
+utöka med nya LLM-klienter eller datakällor utan att ändra pipelinen.
 
 ## Krav
 
@@ -131,10 +131,10 @@ När pipelinen är klar skrivs trendanalysen ut i terminalen och loggas till
 | `trend_analysis.system_prompt` | System-prompt som styr LLM:ens roll | se fil |
 | `trend_analysis.user_prompt_template` | Mall för user-prompten (`{articles}` ersätts) | se fil |
 | `trend_analysis.articles_format_template` | Format per artikelrad (`{title}`, `{source_site}`) | se fil |
-| `trend_analysis.max_articles_for_analysis` | Tak för antal artiklar som skickas till LLM | `50` |
+| `trend_analysis.max_articles_for_analysis` | Tak för antal artiklar som skickas till LLM | `250` |
 | `trend_analysis.min_articles_for_analysis` | Golv — färre artiklar hoppar över LLM-anropet | `3` |
 | `trend_analysis.default_hours` | Standard tidspann om `--hours` inte anges | `24` |
-| `database.retention_days` | Artiklar äldre än så många dagar raderas varje körning | `30` |
+| `database.retention_days` | Artiklar äldre än så många dagar raderas varje körning | `4` |
 | `output.save_trend_report` | Om `true` sparas rapporten till `data/trend_reports/` som `.md` | `true` |
 
 ### `config/sources.json`
@@ -169,7 +169,6 @@ Testerna täcker:
 - `DatabaseManager` — dubblettkontroll, tidsfiltrering, retention
 - `LLMClient` — krav på API-nyckel, rätt anropsparametrar, felhantering
 - `ContentManager` — orkestrering, avbrott vid bristande data, prompt-bygge
-- `BaseScraper` — abstraktionskontraktet upprätthålls
 - `setup_logging` — skapar loggfil, undviker dubbla handlers
 
 ## Loggning
@@ -214,11 +213,9 @@ trending_news_bot/
 │       │   └── llm_client.py        # OpenAI-kompatibel LLM-klient
 │       └── scrapers/
 │           ├── __init__.py
-│           ├── base_scraper.py      # Abstrakt basklass
 │           └── rss_scraper.py       # RSS + trafilatura-fulltext
 └── tests/
     ├── conftest.py              # Gemensamma fixtures (mockar allt externt)
-    ├── test_base_scraper.py
     ├── test_content_manager.py
     ├── test_database.py
     ├── test_llm_client.py

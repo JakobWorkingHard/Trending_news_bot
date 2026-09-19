@@ -11,7 +11,6 @@ Dessa tester verifierar:
  - Att retention-raderingen är säker (räddar aktuell data, raderar gammal)
  - Att retention med days=0/None inte raderar något (säkerhetsventil)
 """
-import sqlite3
 from datetime import datetime, timedelta, timezone
 
 from trending_news_bot.core.database import DatabaseManager
@@ -67,7 +66,7 @@ def test_is_url_seen_false_for_unknown(tmp_db):
     assert tmp_db.is_url_seen("http://never-seen.com/x") is False
 
 
-def test_save_duplicate_url_does_not_raise(tmp_db, caplog):
+def test_save_duplicate_url_does_not_raise(tmp_db):
     # Andra sparningen av samma URL ska fångas av IntegrityError, inte krascha
     tmp_db.save_article(
         url="http://dup.com/a",

@@ -15,7 +15,7 @@ Vad testas:
  - _save_trend_report: skapar fil med rätt innehåll om enabledat
 """
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 

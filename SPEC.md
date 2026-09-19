@@ -30,7 +30,7 @@ käll-agnostiskt: allt som har ett RSS-flöd kan läggas till i `sources.json`.
 | Databas | `sqlite3` (standardbibliotek), fil: `data/articles.db` |
 | LLM-klient | `openai` Python-SDK, OpenAI-kompatibel endpoint |
 | Miljövariabler | `python-dotenv` (`.env`) |
-| Testning | `pytest` + `pytest-mock` |
+| Testning | `pytest` |
 
 ## 3. Arkitektur
 
@@ -51,16 +51,8 @@ CLI-entry. Anropar `setup_logging()`, parsar `--hours` (valfri, annars från
 `settings.json`), instansierar `ContentManager` och anropar
 `run_pipeline(hours=args.hours)`. Fångar topp-nivåfel och skriver ut dem.
 
-### 3.2 `scrapers/base_scraper.py` — `BaseScraper`
-Abstrakt basklass (ärver `ABC`). Tvingar subklasser att implementera:
-- `fetch_headlines() -> List[Dict[str, str]]` — lista med `{"title", "url"}`.
-- `fetch_article_content(article_url) -> str` — brödtexten.
-
-Tillhandahåller `log_status(msg)` som anropar `logger.debug`. Varje subklass
-får en egen logger via `logging.getLogger(self.__class__.__name__)`.
-
-### 3.3 `scrapers/rss_scraper.py` — `RSSScraper`
-Konkret subklass av `BaseScraper`. Två ansvarsområden:
+### 3.2 `scrapers/rss_scraper.py` — `RSSScraper`
+Konkret scraper-klass (ingen basklass). Ansvarsområden:
 
 1. `fetch_headlines(limit=10)`: parsar RSS via `feedparser.parse(self.base_url)`.
    Kontrollerar `feed.bozo` — om `True` returneras `[]` med varning. Annars
@@ -70,10 +62,14 @@ Konkret subklass av `BaseScraper`. Två ansvarsområden:
    `trafilatura.fetch_url`, extraherar text via `trafilatura.extract`.
    Returnerar `""` vid misslyckande (nerladdning eller extraktion).
 
+`__init__` sätter `self.base_url`, en klasspecifik logger via
+`logging.getLogger(self.__class__.__name__)`, och bygger en `ConfigParser` för
+trafilatura (timeout/retries).
+
 Modulen exporterar även `extract_source_site(url)` som parsar domännamnet och
 strippar `www.`.
 
-### 3.4 `core/database.py` — `DatabaseManager`
+### 3.3 `core/database.py` — `DatabaseManager`
 Hanterar SQLite-databasen `data/articles.db`. Tabellens schema:
 
 ```sql
@@ -101,7 +97,7 @@ Alla metoder loggar fel och returnerar säkra fallbacks (`[]`, `False`, `0`)
 istället för att propagera undantag, förutom `save_article` som tystar
 `IntegrityError`.
 
-### 3.5 `llm/llm_client.py` — `LLMClient`
+### 3.4 `llm/llm_client.py` — `LLMClient`
 Kapslar in LLM-API:et. Använder `openai`-SDK men pekar mot en
 OpenAI-kompatibel endpoint:
 
@@ -115,7 +111,7 @@ OpenAI-kompatibel endpoint:
 Vid API-fel fångas undantaget och returnerar strängen
 `"Fel vid generering: {e}"` istället för att krascha pipelinen.
 
-### 3.6 `core/content_manager.py` — `ContentManager`
+### 3.5 `core/content_manager.py` — `ContentManager`
 **Dirigenten.** Orkestrerar hela pipelinen. Instansierar `DatabaseManager`
 och (med config från `settings.json`) `LLMClient` i `__init__`.
 
@@ -139,9 +135,9 @@ och (med config från `settings.json`) `LLMClient` i `__init__`.
 11. `trend_report = llm.generate_response(system_prompt, user_prompt)`.
 12. Skriv ut i terminalen med ramverk; logga varje rad på `INFO`.
 13. Om `output.save_trend_report` är `true` → spara till
-    `data/trend_reports/trend_<UTC-timestamp>.txt` via `_save_trend_report`.
+    `data/trend_reports/trend_<UTC-timestamp>.md` via `_save_trend_report`.
 
-### 3.7 `core/logger.py` — `setup_logging()`
+### 3.6 `core/logger.py` — `setup_logging()`
 Konfigurerar rot-loggern med två handlers (filtillämpas en gång via guard):
 
 - `FileHandler("logs/pipeline.log")` på `DEBUG`.
@@ -156,8 +152,12 @@ Hela pipelinebeteendet styrs här. Se även README.md för tabell med standard.
 
 Nycklar:
 - `scraping.limit_per_feed` (int)
+- `scraping.download_timeout_seconds` (int) — timeout per artikelnedladdning.
+- `scraping.max_retries` (int) — retries/redirects vid nedladdning.
+- `scraping.feed_timeout_seconds` (int) — timeout vid hämtning av RSS-feeden.
 - `llm.model` (str) — default `zai-org/GLM-5.2`
 - `llm.temperature` (float) — default `0.7`
+- `llm.base_url` (str) — OpenAI-kompatibel endpoint.
 - `trend_analysis.system_prompt` (str) — instruerar LLM:en som nyhetsanalyst.
 - `trend_analysis.user_prompt_template` (str) — innehåller `{articles}`.
 - `trend_analysis.articles_format_template` (str) — `{title}`, `{source_site}`.
@@ -275,7 +275,6 @@ riktiga API-nycklar. Allt externt mockas.
 - `test_database.py` — dedup, tidsfiltrering, retention, no-op-fall.
 - `test_llm_client.py` — nyckelkrav, anropsparametrar, felhantering.
 - `test_content_manager.py` — avbrott, kapning, prompt-bygge, sparning.
-- `test_base_scraper.py` — abstraktionskontrakt.
 - `test_logger.py` — skapar fil, inga dubbla handlers, guard-beteende.
 
 Kör med: `pytest` (konfigurerat i `pyproject.toml`:
@@ -292,7 +291,6 @@ Kör med: `pytest` (konfigurerat i `pyproject.toml`:
 
 ### Dev (`[project.optional-dependencies].dev`)
 - `pytest`
-- `pytest-mock`
 
 ## 11. Miljövariabler
 
