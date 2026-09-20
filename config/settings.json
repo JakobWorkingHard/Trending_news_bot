@@ -18,6 +18,10 @@
     "min_articles_for_analysis": 3,
     "default_hours": 24
   },
+  "logging": {
+    "console_level": "INFO",
+    "file_level": "DEBUG"
+  },
   "database": {
     "retention_days": 4
   },

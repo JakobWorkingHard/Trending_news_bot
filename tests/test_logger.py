@@ -70,3 +70,39 @@ def test_setup_logging_skipped_when_handlers_exist(tmp_path, monkeypatch):
     file_handlers = [h for h in root.handlers if isinstance(h, logging.FileHandler)]
     assert file_handlers == []
 
+
+def test_setup_logging_applies_passed_levels(tmp_path, monkeypatch):
+    # Inpassade nivåer (som strängar) ska sättas på respektive handler.
+    monkeypatch.chdir(tmp_path)
+    _clear_root_handlers()
+
+    setup_logging(console_level="WARNING", file_level="ERROR")
+
+    root = logging.getLogger()
+    file_handler = next(h for h in root.handlers if isinstance(h, logging.FileHandler))
+    console_handler = next(
+        h for h in root.handlers
+        if isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
+    )
+
+    assert file_handler.level == logging.ERROR
+    assert console_handler.level == logging.WARNING
+
+
+def test_setup_logging_invalid_level_falls_back(tmp_path, monkeypatch):
+    # Ogiltig nivå-sträng ska ge default (file=DEBUG, console=INFO).
+    monkeypatch.chdir(tmp_path)
+    _clear_root_handlers()
+
+    setup_logging(console_level="INTE_EN_RIKTIG_NIVÅ", file_level="FEL_NIVÅ")
+
+    root = logging.getLogger()
+    file_handler = next(h for h in root.handlers if isinstance(h, logging.FileHandler))
+    console_handler = next(
+        h for h in root.handlers
+        if isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
+    )
+
+    assert file_handler.level == logging.DEBUG
+    assert console_handler.level == logging.INFO
+
