@@ -217,6 +217,67 @@ def test_run_pipeline_passes_correct_prompts_to_llm(tmp_config, mocked_deps):
     assert "- Pythons nya version (python.org)" in user_prompt
 
 
+# --- run_pipeline: fulltext-skip ---
+
+
+def test_run_pipeline_skips_articles_with_empty_fulltext(tmp_config, mocked_deps):
+    # Artiklar där fulltext saknas ska inte sparas i databasen
+    manager = ContentManager()
+
+    # Konfigurera mock-scraper att returnera två headlines
+    mock_scraper_instance = mocked_deps["scraper"].return_value
+    mock_scraper_instance.fetch_headlines.return_value = [
+        {"title": "Med text", "url": "http://example.com/1"},
+        {"title": "Utan text", "url": "http://example.com/2"},
+    ]
+    # Första artikeln får fulltext, andra får tom sträng
+    mock_scraper_instance.fetch_article_content.side_effect = [
+        "Bra brödtext", ""
+    ]
+    # Inga dubbletter
+    manager.db.is_url_seen.return_value = False
+
+    # Se till att LLM-steget inte avbryter pipelinen för tidigt
+    manager.db.get_articles_since.return_value = [
+        {"title": "A", "source_site": "a.com"},
+        {"title": "B", "source_site": "b.com"},
+        {"title": "C", "source_site": "c.com"},
+    ]
+    manager.llm.generate_response.return_value = "Rapport"
+
+    manager.run_pipeline()
+
+    # Bara artikeln med fulltext ska ha sparats
+    assert manager.db.save_article.call_count == 1
+    saved = manager.db.save_article.call_args
+    assert saved.kwargs["title"] == "Med text"
+    assert saved.kwargs["content"] == "Bra brödtext"
+
+
+def test_run_pipeline_skips_articles_when_fetch_raises(tmp_config, mocked_deps):
+    # Om fetch_article_content kastar undantag ska artikeln hoppas över
+    manager = ContentManager()
+
+    mock_scraper_instance = mocked_deps["scraper"].return_value
+    mock_scraper_instance.fetch_headlines.return_value = [
+        {"title": "Kraschar", "url": "http://example.com/x"},
+    ]
+    mock_scraper_instance.fetch_article_content.side_effect = Exception("timeout")
+    manager.db.is_url_seen.return_value = False
+
+    manager.db.get_articles_since.return_value = [
+        {"title": "A", "source_site": "a.com"},
+        {"title": "B", "source_site": "b.com"},
+        {"title": "C", "source_site": "c.com"},
+    ]
+    manager.llm.generate_response.return_value = "Rapport"
+
+    manager.run_pipeline()
+
+    # Inget ska ha sparats
+    assert manager.db.save_article.call_count == 0
+
+
 # --- _save_trend_report ---
 
 

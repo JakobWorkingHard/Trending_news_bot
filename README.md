@@ -27,8 +27,8 @@ Trending News Bot kör en enda pipeline som:
 2. Skrapar varje feed med `feedparser` och begränsar antal artiklar per feed
    (`scraping.limit_per_feed` i `config/settings.json`).
 3. Släpper dubbletter via URL-kontroll mot SQLite-databasen.
-4. Hämtar fulltext med `trafilatura`; faller tillbaka på RSS-summary om det
-   misslyckas.
+4. Hämtar fulltext med `trafilatura`; artiklar där fulltext saknas hoppas
+   över (och sparas ej).
 5. Sparar nya artiklar i `data/articles.db` tillsammans med `source_site`
    (extraherat från URL:en).
 6. Raderar artiklar äldre än `database.retention_days`.
@@ -47,7 +47,7 @@ RSS-feeds (sources.json)
    RSSScraper ── feedparser ──▶ rubriker + URL
         │
         ▼
-   trafilatura ──▶ fulltext (eller RSS-summary som fallback)
+   trafilatura ──▶ fulltext (saknas fulltext hoppas artikeln över)
         │
         ▼
    DatabaseManager ──▶ dubblettkontroll ──▶ spara i SQLite
@@ -165,7 +165,7 @@ pytest
 ```
 
 Testerna täcker:
-- `RSSScraper` — parsning, bozo-fel, fulltext-extraktion, fallback till summary
+- `RSSScraper` — parsning, bozo-fel, fulltext-extraktion
 - `DatabaseManager` — dubblettkontroll, tidsfiltrering, retention
 - `LLMClient` — krav på API-nyckel, rätt anropsparametrar, felhantering
 - `ContentManager` — orkestrering, avbrott vid bristande data, prompt-bygge

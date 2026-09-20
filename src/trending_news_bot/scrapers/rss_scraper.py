@@ -114,7 +114,7 @@ class RSSScraper:
     ):
         self.base_url = feed_url
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info(f"Initierar skrapa för: {self.base_url}")
+        self.logger.info(f"Påbörjar en riktigt jäkla snygg skrapa för: {self.base_url}")
         self._download_config = _build_trafilatura_config(
             download_timeout, max_retries
         )
@@ -154,12 +154,9 @@ class RSSScraper:
 
         headlines = []
         for entry in feed.entries[:limit]:
-            summary = entry.get('summary', '')
-            
             headlines.append({
                 "title": entry.title,
                 "url": entry.link,
-                "summary": summary 
             })
             
         # Räkna hur många nyheter vi hittade i feeden

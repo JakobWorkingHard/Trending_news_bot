@@ -72,6 +72,8 @@ class ContentManager:
         self.db.delete_older_than(retention_days)
 
         new_articles_count = 0
+        fulltext_attempted = 0
+        fulltext_success = 0
 
         # 1. Skrapa alla feeds och spara nya artiklar i databasen
         for category, urls in sources.items():
@@ -93,29 +95,43 @@ class ContentManager:
                         self.logger.debug(f"Dubblett ignorerad: {duplicate_title}")
                         continue
 
-                    # Hämta fulltext; fall tillbaka på RSS-summary om det misslyckas.
+                    # Hämta fulltext. Artiklar där fulltext saknas sparas ej —
+                    # summary används inte längre som fallback.
                     # Felisolering: en enskild artikel som time:ar ut eller kastar
                     # får inte krascha hela pipelinen.
+                    fulltext_attempted += 1
                     try:
                         full_text = scraper.fetch_article_content(article_url)
                     except Exception as e:
                         self.logger.warning(
-                            f"Undantag vid hämtning av fulltext från "
+                            f"Misslyckades hämta fulltext från "
                             f"{article_url}: {e}"
                         )
-                        full_text = ""
-                    content = full_text if full_text else item.get("summary", "")
+                        continue
 
+                    if not full_text:
+                        self.logger.warning(
+                            f"Ingen fulltext kunde extraheras från {article_url}; "
+                            f"artikeln sparas ej."
+                        )
+                        continue
+
+                    fulltext_success += 1
                     source_site = extract_source_site(article_url)
 
                     self.db.save_article(
                         url=article_url,
                         title=item["title"],
-                        content=content,
+                        content=full_text,
                         source_site=source_site,
                     )
                     new_articles_count += 1
 
+        fulltext_failed = fulltext_attempted - fulltext_success
+        self.logger.info(
+            f"Fulltext-hämtning: {fulltext_success}/{fulltext_attempted} "
+            f"artiklar lyckades ({fulltext_failed} misslyckades)."
+        )
         self.logger.info(f"Sparade {new_articles_count} nya artiklar i databasen.")
 
         # 2. Hämta alla artiklar från senaste X timmarna för trendanalys

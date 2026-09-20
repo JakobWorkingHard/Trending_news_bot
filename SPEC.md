@@ -56,7 +56,7 @@ Konkret scraper-klass (ingen basklass). Ansvarsområden:
 
 1. `fetch_headlines(limit=10)`: parsar RSS via `feedparser.parse(self.base_url)`.
    Kontrollerar `feed.bozo` — om `True` returneras `[]` med varning. Annars
-   returneras de `limit` första entries som dicts med `title`, `url`, `summary`.
+   returneras de `limit` första entries som dicts med `title`, `url`.
 
 2. `fetch_article_content(article_url)`: hämtar HTML via
    `trafilatura.fetch_url`, extraherar text via `trafilatura.extract`.
@@ -123,7 +123,7 @@ och (med config från `settings.json`) `LLMClient` i `__init__`.
 5. För varje kategori och URL: skapa `RSSScraper`, hämta headlines, och för
    varje artikel:
    - Hoppa om `is_url_seen(url)`.
-   - Hämta fulltext; fallback till RSS-summary.
+   - Hämta fulltext; saknas fulltext hoppas artikeln över (summary används ej).
    - Spara med `extract_source_site(url)` som `source_site`.
 6. Hämta `recent_articles = db.get_articles_since(hours)`.
 7. Om färre än `min_articles_for_analysis` → avbryt (sparar LLM-kostnader).
@@ -197,7 +197,8 @@ function run_pipeline(hours):
             scraper = RSSScraper(url)
             for item in scraper.fetch_headlines(limit=settings.scraping.limit_per_feed):
                 if db.is_url_seen(item.url): continue
-                content = scraper.fetch_article_content(item.url) or item.summary
+                content = scraper.fetch_article_content(item.url)
+                if not content: continue
                 db.save_article(item.url, item.title, content, extract_source_site(item.url))
 
     recent = db.get_articles_since(hours)
@@ -226,7 +227,7 @@ function run_pipeline(hours):
 | `sources.json` ogiltig JSON | **`load_sources()` kraschar** (saknar try/except — känd inkonsistens) |
 | Dubblett-URL vid sparning | `IntegrityError` tystas, loggas som varning |
 | RSS-feed bozo | Returnerar `[]`, loggas som varning |
-| `trafilatura.fetch_url` → None | Fulltext = `""`, fallback till RSS-summary |
+| `trafilatura.fetch_url` → None | Fulltext = `""`, artikeln hoppas över |
 | API-nyckel saknas | `ValueError` vid `LLMClient`-initiering — pipeline avbryts |
 | API-anrop kastar | `generate_response` returnerar `"Fel vid generering: ..."` |
 | För få artiklar | Pipeline avbryter innan LLM-anrop (sparar pengar) |
@@ -271,7 +272,7 @@ riktiga API-nycklar. Allt externt mockas.
 - `reset_logging` (autouse) — rensar handlers efter varje test.
 
 ### 9.2 Täckning
-- `test_rss_scraper.py` — parsning, bozo, fulltext, fallback, summary-saknas.
+- `test_rss_scraper.py` — parsning, bozo, fulltext, fulltext-saknas.
 - `test_database.py` — dedup, tidsfiltrering, retention, no-op-fall.
 - `test_llm_client.py` — nyckelkrav, anropsparametrar, felhantering.
 - `test_content_manager.py` — avbrott, kapning, prompt-bygge, sparning.

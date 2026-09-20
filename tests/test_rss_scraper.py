@@ -37,8 +37,8 @@ def test_fetch_headlines_success(mock_parse, mock_fetch_feed):
     mock_feed.bozo = False # Ingen error
 
     # Skapa fejkade artiklar
-    mock_entry_1 = MagicMock(title="Nyhet 1", link="http://länk1", get=MagicMock(return_value="Sammanfattning 1"))
-    mock_entry_2 = MagicMock(title="Nyhet 2", link="http://länk2", get=MagicMock(return_value="Sammanfattning 2"))
+    mock_entry_1 = MagicMock(title="Nyhet 1", link="http://länk1")
+    mock_entry_2 = MagicMock(title="Nyhet 2", link="http://länk2")
     mock_feed.entries = [mock_entry_1, mock_entry_2]
 
     # Säg till mocken vad den ska returnera när den anropas
@@ -52,7 +52,6 @@ def test_fetch_headlines_success(mock_parse, mock_fetch_feed):
     assert len(headlines) == 1
     assert headlines[0]["title"] == "Nyhet 1"
     assert headlines[0]["url"] == "http://länk1"
-    assert headlines[0]["summary"] == "Sammanfattning 1"
 
 
 @patch('trending_news_bot.scrapers.rss_scraper._fetch_feed_content')
@@ -102,28 +101,6 @@ def test_fetch_headlines_empty_feed(mock_parse, mock_fetch_feed):
     headlines = scraper.fetch_headlines()
 
     assert headlines == []
-
-
-@patch('trending_news_bot.scrapers.rss_scraper._fetch_feed_content')
-@patch('trending_news_bot.scrapers.rss_scraper.feedparser.parse')
-def test_fetch_headlines_missing_summary(mock_parse, mock_fetch_feed):
-    mock_fetch_feed.return_value = "<rss>fake</rss>"
-    # En entry utan 'summary' ska ge summary="" via .get(), inte krascha
-    mock_feed = MagicMock()
-    mock_feed.bozo = False
-    mock_entry = MagicMock()
-    mock_entry.title = "Nyhet"
-    mock_entry.link = "http://länk"
-    # .get() saknas på riktig entry; MagicMock gör .get() returnera "" som fallback
-    mock_entry.get = MagicMock(return_value="")
-    mock_feed.entries = [mock_entry]
-    mock_parse.return_value = mock_feed
-
-    scraper = RSSScraper("http://fake-feed.com")
-    headlines = scraper.fetch_headlines()
-
-    assert len(headlines) == 1
-    assert headlines[0]["summary"] == ""
 
 
 @patch('trending_news_bot.scrapers.rss_scraper._fetch_feed_content')
