@@ -1,4 +1,6 @@
 import logging
+import re
+import html
 import feedparser
 import requests
 import trafilatura
@@ -100,6 +102,30 @@ def extract_source_site(url: str) -> str:
         netloc = netloc[4:]
     return netloc
 
+
+def _clean_summary(raw) -> str:
+    """
+    Rensar en RSS-sammanfattning (summary) från HTML-taggar och entiteter.
+
+    Många flöden levererar summary som HTML. Vi strippar taggarna, avkodar
+    HTML-entiteter (&amp; etc.) och kollapsar whitespace till en enda rad.
+    Returnerar tom sträng för None/ogiltig indata.
+    """
+    if not raw:
+        return ""
+    if not isinstance(raw, str):
+        try:
+            raw = str(raw)
+        except Exception:
+            return ""
+    # Släng HTML-taggar
+    text = re.sub(r"<[^>]+>", "", raw)
+    # Avkoda entiteter (&amp; &quot; &#39; ...)
+    text = html.unescape(text)
+    # Kollapsa alla whitespace-sekvenser till ett enda mellanslag och trimma
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
 class RSSScraper:
     """
     En universell skrapa för alla sajter som erbjuder RSS-feeds.
@@ -154,9 +180,13 @@ class RSSScraper:
 
         headlines = []
         for entry in feed.entries[:limit]:
+            # getattr med default: feedparser-entries (FeedParserDict) stödjer
+            # attributaccess, och saknas summary returneras "" istället för krasch.
+            raw_summary = getattr(entry, "summary", "") or ""
             headlines.append({
                 "title": entry.title,
                 "url": entry.link,
+                "summary": _clean_summary(raw_summary),
             })
             
         # Räkna hur många nyheter vi hittade i feeden

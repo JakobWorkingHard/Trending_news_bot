@@ -1,7 +1,11 @@
 from unittest.mock import patch, MagicMock
 
 # Importera dina funktioner/klasser. (Ändra 'rss_scraper' till vad din fil heter)
-from trending_news_bot.scrapers.rss_scraper import RSSScraper, extract_source_site
+from trending_news_bot.scrapers.rss_scraper import (
+    RSSScraper,
+    extract_source_site,
+    _clean_summary,
+)
 
 # --- 1. Tester för extract_source_site ---
 
@@ -36,9 +40,13 @@ def test_fetch_headlines_success(mock_parse, mock_fetch_feed):
     mock_feed = MagicMock()
     mock_feed.bozo = False # Ingen error
 
-    # Skapa fejkade artiklar
-    mock_entry_1 = MagicMock(title="Nyhet 1", link="http://länk1")
-    mock_entry_2 = MagicMock(title="Nyhet 2", link="http://länk2")
+    # Skapa fejkade artiklar (med summary för att testa HTML-rensning)
+    mock_entry_1 = MagicMock(
+        title="Nyhet 1", link="http://länk1", summary="<p>Sammanfattning 1</p>"
+    )
+    mock_entry_2 = MagicMock(
+        title="Nyhet 2", link="http://länk2", summary="Plain text 2"
+    )
     mock_feed.entries = [mock_entry_1, mock_entry_2]
 
     # Säg till mocken vad den ska returnera när den anropas
@@ -52,6 +60,8 @@ def test_fetch_headlines_success(mock_parse, mock_fetch_feed):
     assert len(headlines) == 1
     assert headlines[0]["title"] == "Nyhet 1"
     assert headlines[0]["url"] == "http://länk1"
+    # summary ska finnas och vara HTML-stripped
+    assert headlines[0]["summary"] == "Sammanfattning 1"
 
 
 @patch('trending_news_bot.scrapers.rss_scraper._fetch_feed_content')
@@ -125,6 +135,54 @@ def test_fetch_headlines_empty_content_returns_empty(mock_fetch_feed):
     headlines = scraper.fetch_headlines()
 
     assert headlines == []
+
+
+# --- 2b. Tester för _clean_summary och summary-saknas ---
+
+
+def test_clean_summary_strips_html_and_entities():
+    # HTML-taggar ska bort, entiteter avkodas, whitespace kollapsat
+    raw = "<p>Hej &amp;  hopp<br/>rad<b>2</b></p>"
+    assert _clean_summary(raw) == "Hej & hopprad2"
+
+
+def test_clean_summary_collapses_whitespace():
+    assert _clean_summary("  rad\t1\n\nrad   2 ") == "rad 1 rad 2"
+
+
+def test_clean_summary_empty_for_none():
+    assert _clean_summary(None) == ""
+
+
+def test_clean_summary_empty_for_empty_string():
+    assert _clean_summary("") == ""
+
+
+def test_clean_summary_plain_text_unchanged():
+    assert _clean_summary("En vanlig mening.") == "En vanlig mening."
+
+
+@patch('trending_news_bot.scrapers.rss_scraper._fetch_feed_content')
+@patch('trending_news_bot.scrapers.rss_scraper.feedparser.parse')
+def test_fetch_headlines_summary_missing_returns_empty(mock_parse, mock_fetch_feed):
+    # En entry utan summary-attribut (feedparser-liknande objekt) ska ge summary=""
+    from types import SimpleNamespace
+    mock_fetch_feed.return_value = "<rss>fake</rss>"
+    mock_feed = MagicMock()
+    mock_feed.bozo = False
+
+    # SimpleNamespace saknar både .get och .summary — exakt som en
+    # feedparser-entry som inte har med summary-fältet.
+    entry = SimpleNamespace(title="Utan summary", link="http://x")
+    mock_feed.entries = [entry]
+    mock_parse.return_value = mock_feed
+
+    scraper = RSSScraper("http://fake-feed.com")
+    headlines = scraper.fetch_headlines(limit=5)
+
+    assert len(headlines) == 1
+    assert headlines[0]["title"] == "Utan summary"
+    assert headlines[0]["summary"] == ""
 
 
 # --- 3. Tester för fetch_article_content ---

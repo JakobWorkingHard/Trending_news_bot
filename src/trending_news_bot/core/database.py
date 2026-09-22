@@ -34,6 +34,7 @@ class DatabaseManager:
             url TEXT UNIQUE NOT NULL,
             title TEXT NOT NULL,
             content TEXT,
+            summary TEXT,
             source_site TEXT NOT NULL,
             scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -41,6 +42,13 @@ class DatabaseManager:
         try:
             with self._get_connection() as conn:
                 conn.execute(query)
+                # Migrera äldre databaser som saknar summary-kolumnen.
+                # ALTER TABLE ... ADD COLUMN kastar OperationalError om kolumnen
+                # redan finns, vilket vi tystar — därmed idempotent.
+                try:
+                    conn.execute("ALTER TABLE articles ADD COLUMN summary TEXT")
+                except sqlite3.OperationalError:
+                    pass
         except Exception as e:
             self.logger.error(f"Fel vid skapande av tabeller: {e}")
 
@@ -53,14 +61,14 @@ class DatabaseManager:
             self.logger.error(f"Fel vid sökning efter URL {url}: {e}")
             return False
 
-    def save_article(self, url: str, title: str, content: str, source_site: str):
+    def save_article(self, url: str, title: str, content: str, source_site: str, summary: str = ""):
         query = (
-            "INSERT INTO articles (url, title, content, source_site) "
-            "VALUES (?, ?, ?, ?)"
+            "INSERT INTO articles (url, title, content, summary, source_site) "
+            "VALUES (?, ?, ?, ?, ?)"
         )
         try:
             with self._get_connection() as conn:
-                conn.execute(query, (url, title, content, source_site))
+                conn.execute(query, (url, title, content, summary, source_site))
             self.logger.debug(f"Sparade ny artikel från {source_site}: {title}")
         except sqlite3.IntegrityError:
             self.logger.warning(f"Artikeln finns redan: {url}")
@@ -70,11 +78,12 @@ class DatabaseManager:
     def get_articles_since(self, hours: int) -> List[Dict[str, str]]:
         """
         Hämtar alla artiklar som skrapats inom de senaste 'hours' timmarna.
-        Returnerar en lista med dictionaries innehållande 'title' och 'source_site'.
+        Returnerar en lista med dictionaries innehållande 'title', 'source_site',
+        'summary' och 'url' (url + summary behövs i trendanalysens andra steg).
         """
         cutoff = self._utc_cutoff(hours=hours)
         query = (
-            "SELECT title, source_site FROM articles "
+            "SELECT title, source_site, summary, url FROM articles "
             "WHERE scraped_at >= ? ORDER BY scraped_at DESC"
         )
         try:
@@ -89,11 +98,44 @@ class DatabaseManager:
                     article = {
                         "title": r["title"],
                         "source_site": r["source_site"],
+                        "summary": r["summary"] if r["summary"] is not None else "",
+                        "url": r["url"],
                     }
                     articles.append(article)
                 return articles
         except Exception as e:
             self.logger.error(f"Kunde inte hämta artiklar från databasen: {e}")
+            return []
+
+    def get_articles_by_urls(self, urls: List[str]) -> List[Dict[str, str]]:
+        """
+        Hämtar url, title och content för de artiklar vars URL finns i 'urls'.
+        Används i Call 2 för att hämta fulltext enbart för de artiklar som
+        trendanalysen (Call 1) identifierade som del av en trend.
+
+        Returnerar [] för tom indata (SQL IN () är ogiltig) eller vid fel.
+        """
+        if not urls:
+            return []
+        # Bygg dynamiskt antal platshållare: ?, ?, ...
+        placeholders = ", ".join("?" for _ in urls)
+        query = (
+            f"SELECT url, title, content FROM articles WHERE url IN ({placeholders})"
+        )
+        try:
+            with self._get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(query, tuple(urls)).fetchall()
+                return [
+                    {
+                        "url": r["url"],
+                        "title": r["title"],
+                        "content": r["content"] if r["content"] is not None else "",
+                    }
+                    for r in rows
+                ]
+        except Exception as e:
+            self.logger.error(f"Kunde inte hämta artiklar per URL: {e}")
             return []
 
     def delete_older_than(self, days: int) -> int:

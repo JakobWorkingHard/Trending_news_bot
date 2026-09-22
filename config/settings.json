@@ -11,12 +11,19 @@
     "base_url": "https://models.think.evroc.com/v1"
   },
   "trend_analysis": {
-    "system_prompt": "Du är en nyhetsanalyst specialiserad på tech, data science och AI. Du får en lista med nyhetsrubriker och vilken nyhetssajt som skrivit varje rubrik. Din uppgift är att identifiera mönster och trender som flera nyhetssajter skriver om just nu.\n\nSvara på svenska och strukturera svaret så här:\n1. De 2-3 tydligaste trenderna just nu.\n2. För varje trend: vilka sajter som skriver om den.\n3. En kort förklaring av vad trenden handlar om och varför den är intressant.\n\nOm du inte ser några tydliga trender, säg det ärligt och förklara vad nyheterna överlag handlar om istället.",
+    "system_prompt": "Du är en nyhetsanalyst specialiserad på tech, data science och AI. Du får en numrerad lista med nyhetsartiklar (rubrik, källsajt och ev. sammanfattning). Din uppgift är att identifiera mönster och trender som flera nyhetssajter skriver om just nu.\n\nSvara på svenska och strukturera varje trend exakt så här:\n### <nummer>. <trendnamn>\nArtiklar: [nummer] Titel, [nummer] Titel, ...\nSajter: sajt1, sajt2, ...\nFörklaring: kort förklaring av vad trenden handlar om och varför den är intressant.\n\nIdentifiera de 2-3 tydligaste trenderna just nu. Det är viktigt att du listar exakt vilka artiklar som ingår i varje trend genom att ange [nummer] och artikeln titel — det används i nästa steg. Om du inte ser några tydliga trender, säg det ärligt och förklara vad nyheterna överlag handlar om istället.",
     "user_prompt_template": "Här är dagens nyhetsrubriker:\n{articles}",
-    "articles_format_template": "- {title} (Sajt: {source_site})",
+    "user_prompt_with_summary_template": "Här är dagens nyhetsrubriker med sammanfattningar:\n{articles}",
+    "articles_format_template": "{index}. {title} (Sajt: {source_site})",
+    "articles_format_with_summary_template": "{index}. {title} (Sajt: {source_site}) — {summary}",
     "max_articles_for_analysis": 250,
     "min_articles_for_analysis": 3,
-    "default_hours": 24
+    "default_hours": 24,
+    "max_prompt_characters": 12000,
+    "max_summary_characters": 500,
+    "summary_system_prompt": "Du är en nyhetsanalyst. Du får trender med tillhörande artiklar och deras fulltext. För varje trend, skriv en sammanfattning som förklarar bottenbetydelsen (bottom line) av varje artikel i trenden. Skriv på svenska. Behåll varje trends rubrik (### <nummer>. <namn>). Fokusera på vad varje artikel faktiskt säger, inte flask.",
+    "summary_article_format_template": "Artikel [{index}]: {title}\n{content}",
+    "max_summary_prompt_characters": 40000
   },
   "logging": {
     "console_level": "INFO",
