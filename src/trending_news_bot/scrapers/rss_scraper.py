@@ -84,9 +84,9 @@ def _fetch_feed_content(url: str, timeout: int = _DEFAULT_FEED_TIMEOUT) -> str:
     # Försök följa XML-deklarationens encoding om angiven; fall tillbaka på
     # UTF-8 (och ignorer därmed HTTP-headerns charset=us-ascii).
     try:
-        return text.decode("utf-8")
+        return text.decode("utf-8-sig") # Filtrerar bort BOM
     except UnicodeDecodeError:
-        return text.decode("utf-8", errors="replace")
+        return text.decode("utf-8-sig", errors="replace")
 
 
 def extract_source_site(url: str) -> str:

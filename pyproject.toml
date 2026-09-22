@@ -7,7 +7,7 @@ name = "trending_news_bot"
 version = "0.1.0"
 description = "Ett OOP-strukturerat verktyg för att skrapa nyheter, spara dem i en databas och identifiera trender via LLM"
 authors = [
-    { name = "Ditt Namn", email = "din.epost@example.com" }
+    { name = "Jakob Ohlsen S.", email = "jowlen@hotmail.se" }
 ]
 requires-python = ">=3.10"
 dependencies = [

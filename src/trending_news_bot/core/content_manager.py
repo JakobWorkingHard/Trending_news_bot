@@ -96,7 +96,6 @@ class ContentManager:
                         continue
 
                     # Hämta fulltext. Artiklar där fulltext saknas sparas ej —
-                    # summary används inte längre som fallback.
                     # Felisolering: en enskild artikel som time:ar ut eller kastar
                     # får inte krascha hela pipelinen.
                     fulltext_attempted += 1
