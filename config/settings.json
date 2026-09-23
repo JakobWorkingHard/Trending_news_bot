@@ -20,10 +20,10 @@
     "min_articles_for_analysis": 3,
     "default_hours": 24,
     "max_prompt_characters": 12000,
-    "max_summary_characters": 500,
-    "summary_system_prompt": "Du är en nyhetsanalyst. Du får trender med tillhörande artiklar och deras fulltext. För varje trend, skriv en sammanfattning som förklarar bottenbetydelsen (bottom line) av varje artikel i trenden. Skriv på svenska. Behåll varje trends rubrik (### <nummer>. <namn>). Fokusera på vad varje artikel faktiskt säger, inte flask.",
+    "max_summary_characters": 1500,
+    "summary_system_prompt": "Du är en nyhetsanalyst. Du får trender med tillhörande artiklar och deras fulltext. För varje trend, skriv en sammanfattning som samlar artiklarna till en helhet så att läsaren får en ny, samlad förståelse av nyheterna i trenden snarare än enskilda artiklars bottenbetydelse. Dissekera kort vad varje artikel tillför och vad läsaren faktiskt lär sig, utan breda förklaringar. Skriv på svenska. Behåll varje trends rubrik (### <nummer>. <namn>). Fokusera på vad artiklarna faktiskt säger, inte flask.",
     "summary_article_format_template": "Artikel [{index}]: {title}\n{content}",
-    "max_summary_prompt_characters": 40000
+    "max_summary_prompt_characters": 60000
   },
   "logging": {
     "console_level": "INFO",

@@ -176,6 +176,10 @@ class ContentManager:
 
         self.logger.info(f"Call 1-prompt byggs i läge: {mode}")
 
+        call1_chars = len(system_prompt) + len(user_prompt)
+        self.logger.info(f"Call 1 — tecken skickade till LLM: {call1_chars}")
+        print(f"Call 1 — tecken skickade till LLM: {call1_chars}")
+
         # 4. Call 1 — trendanalys
         trend_report = self.llm.generate_response(system_prompt, user_prompt)
 
@@ -397,6 +401,41 @@ class ContentManager:
         # Släng trender utan artiklar
         return [t for t in trends if t["indices"]]
 
+    def _select_trend(self, trends: List[Dict]) -> Optional[Dict]:
+        """
+        Låter användaren välja vilken trend som ska sammanfattas i Call 2.
+        Returnerar vald trend (dict) eller None vid ogiltigt val/avbrott.
+        """
+        if not trends:
+            return None
+        if len(trends) == 1:
+            return trends[0]
+
+        print("\n" + "=" * 60)
+        print("📋 VÄLJ TREND ATT SAMMANFATTA (Call 2)")
+        print("=" * 60)
+        for i, t in enumerate(trends, start=1):
+            print(f"  {i}. Trend {t['num']}: {t['name']} ({len(t['indices'])} artiklar)")
+        print("=" * 60)
+
+        while True:
+            choice = input(
+                f"Ange nummer (1-{len(trends)}) och tryck Enter, "
+                f"eller 'q' för att hoppa över Call 2: "
+            ).strip()
+            if choice.lower() == "q":
+                return None
+            try:
+                idx = int(choice)
+            except ValueError:
+                print(f"Ogiltig inmatning: '{choice}'. Försök igen.")
+                continue
+            if 1 <= idx <= len(trends):
+                return trends[idx - 1]
+            print(
+                f"Nummer utanför intervall 1-{len(trends)}. Försök igen."
+            )
+
     def _summarize_trends(
         self, trend_report: str, recent_articles: List[Dict], trend_cfg: Dict
     ) -> str:
@@ -417,6 +456,19 @@ class ContentManager:
                 "— hoppar över Call 2."
             )
             return ""
+
+        # Låt användaren välja vilken trend som ska sammanfattas i Call 2
+        selected_trend = self._select_trend(trends)
+        if selected_trend is None:
+            self.logger.info("Ingen trend vald — hoppar över Call 2.")
+            return ""
+        if len(trends) > 1:
+            skipped_trends = [t["num"] for t in trends if t is not selected_trend]
+            self.logger.info(
+                f"Skickar endast trend {selected_trend['num']} till Call 2. "
+                f"Skippar trender {skipped_trends}."
+            )
+        trends = [selected_trend]
 
         # Mappa 1-baserade index → url (index utanför intervall varnas och skippar)
         candidate_urls: List[str] = []
@@ -456,6 +508,9 @@ class ContentManager:
             f"Call 2-prompt: {included} artiklar inkluderade, {skipped} skipparade."
         )
         summary_system_prompt = trend_cfg.get("summary_system_prompt", "")
+        call2_chars = len(summary_system_prompt) + len(summary_user_prompt)
+        self.logger.info(f"Call 2 — tecken skickade till LLM: {call2_chars}")
+        print(f"Call 2 — tecken skickade till LLM: {call2_chars}")
         summary_report = self.llm.generate_response(
             summary_system_prompt, summary_user_prompt
         )
