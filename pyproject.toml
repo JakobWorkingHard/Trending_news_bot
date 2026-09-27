@@ -27,4 +27,4 @@ testpaths = ["tests"]
 addopts = "-v --tb=short"
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pandas"]

@@ -3,7 +3,7 @@
 Ett OOP-strukturerat verktyg för att skrapa nyheter via RSS-flöden, spara dem i en
 SQLite-databas och identifiera trender med hjälp av en LLM. Pipelinen hämtar
 rubriker från konfigurerade källor, deduplicerar, extraherar fulltext med
-`trafilatura`, och skickar de senaste artiklarna till en OpenAI-kompatibel modell
+`trafilatura`, och skickar de senaste artiklarnas rubriker till en OpenAI-kompatibel modell
 för trendanalys.
 
 ## Innehåll
@@ -179,7 +179,7 @@ handlers på rot-loggern:
 - **Fil** (`logs/pipeline.log`): loggar på `DEBUG`-nivå och uppåt — allt.
 - **Terminal**: loggar på `INFO`-nivå och uppåt — det viktigaste.
 
-Format: `2026-08-28 09:45:12 - RSSScraper - INFO - Hittade 10 rubriker`.
+Format: `2026-08-28 09:45:12 - RSSScraper - INFO - Hittade 10 nyheter i feeden`.
 
 > Logs-mappen skapas automatiskt vid körning. `logs/*.log` ignoreras av git
 > (se `.gitignore`); själva mappen behöver inte sparas i versionkontroll.
@@ -197,10 +197,10 @@ trending_news_bot/
 │   └── sources.json             # RSS-källor per kategori
 ├── data/
 │   ├── articles.db              # SQLite-databas (skapas vid körning)
-│   └── trend_reports/           # Sparade rapporter (om enablelat)
+│   └── trend_reports/           # Sparade rapporter (om aktiverat)
 ├── logs/
 │   └── pipeline.log             # Debug+INFO-logg (skapas vid körning)
-├── notebooks/                   # För experiment och analys
+├── notebooks/                   # För experiment och analys (kräver pandas, ingår i dev-beroenden)
 ├── src/
 │   └── trending_news_bot/
 │       ├── __init__.py
@@ -210,6 +210,7 @@ trending_news_bot/
 │       │   ├── database.py          # SQLite + dubblettkontroll
 │       │   └── logger.py            # Global loggkonfiguration
 │       ├── llm/
+│       │   ├── __init__.py
 │       │   └── llm_client.py        # OpenAI-kompatibel LLM-klient
 │       └── scrapers/
 │           ├── __init__.py

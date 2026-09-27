@@ -1,24 +1,24 @@
 Syfte med projektet
 Hela poängen med det här bygget var att slippa fastna i ett ändlöst scrollande på nätet varje morgon. Jag ville helt enkelt ha en pipeline som sköter morgonkaffe-spaningen åt mig inom tech, data science och AI:
 
-Skrapa hem färska nyhetsartiklar från nätet.
+- Skrapa hem färska nyhetsartiklar från nätet.
 
-Dumpa in rubrikerna till en LLM som får svettas och vaska fram vad folk faktiskt snackar om just nu.
+- Dumpa in rubrikerna till en LLM som får svettas och vaska fram vad folk faktiskt snackar om just nu.
 
-Spotta ur sig en färdig Markdown-rapport som serverar alla heta trender på ett silverfat till användaren (vilket i dagsläget är jag själv :D).
+- Spotta ur sig en färdig Markdown-rapport som serverar alla heta trender på ett silverfat till användaren (vilket i dagsläget är jag själv :D).
 
 För egen del handlade det mest om att lära mig hur man bygger en dataskrapa som inte imploderar så fort en webbsida hostar till. Jag ville förstå hur man handskas med RSS-flöden på riktigt, vad för knasiga spärrar man åker på, och hur man sätter ihop en hel kedja där man skyfflar data fram och tillbaka mot ett LLM-API utan att plånboken ryker eller koden kraschar.
 
 Fördjupningsområden
-Web scraping med feedparser, requests och trafilatura.
+- Web scraping med feedparser, requests och trafilatura.
 
-Prata med externa LLM-modeller via OpenAI-kompatibla API:er.
+- Prata med externa LLM-modeller via OpenAI-kompatibla API:er.
 
-Automatisk rapportgenerering utan handpåläggning.
+- Automatisk rapportgenerering utan handpåläggning.
 
-Strukturera upp allt som ett städat och körbart Python-paket med pyproject.toml och src-layout.
+- Strukturera upp allt som ett städat och körbart Python-paket med pyproject.toml och src-layout.
 
-Klassiskt data engineering-hantverk i miniformat: hämta, rensa dubbletter, spara i SQLite, analysera och leverera.
+- Klassiskt data engineering-hantverk i miniformat: hämta, rensa dubbletter, spara i SQLite, analysera och leverera.
 
 Vad projektet gör
 1. Skrapar nyheter från RSS och artiklar
@@ -70,18 +70,18 @@ Bakom kulisserna pågår en enorm infrastruktur- och optimeringsracet. Infoq.com
 ____________________________________________________________________________
 
 Vad som fungerade bra
-Lagerindelningen i koden: Att dela upp allt i core, scrapers och llm styrda av ContentManager gjorde livet tusen gånger enklare. Det blev supertydligt vem som gör vad och hur testerna skulle skrivas.
+1. Lagerindelningen i koden: Att dela upp allt i core, scrapers och llm styrda av ContentManager gjorde livet tusen gånger enklare. Det blev supertydligt vem som gör vad och hur testerna skulle skrivas.
 
-Feedly-bluffen: Att låtsas vara Feedly mot RSS-flödena och en vanlig webbläsare mot artiklarna löste blockeringsproblemen på ett kick. Riktigt skön känsla när de röda felkoderna plötsligt lös med sin frånvaro.
+2. Feedly-bluffen: Att låtsas vara Feedly mot RSS-flödena och en vanlig webbläsare mot artiklarna löste blockeringsproblemen på ett kick. Riktigt skön känsla när de röda felkoderna plötsligt lös med sin frånvaro.
 
-Pipelinen kraschar inte för minsta lilla: Varje artikelskrapning ligger i en egen try/except. Om en webbsida bråkar eller dör så loggas det bara, och skraparen traskar obrytt vidare till nästa artikel. Ingen sajt ska få sänka hela mitt bygge.
+3. Pipelinen kraschar inte för minsta lilla: Varje artikelskrapning ligger i en egen try/except. Om en webbsida bråkar eller dör så loggas det bara, och skraparen traskar obrytt vidare till nästa artikel. Ingen sajt ska få sänka hela mitt bygge.
 
-Spärrarna för LLM-anropen: Jag la in spärrar så att programmet inte ens ringer modellen om det finns för få artiklar (onödigt att bränna pengar på att analysera tre ynka rubriker). Likaså finns ett maxtak så den inte skickar med en hel bibel av misstag och spränger token-gränsen.
+4. Spärrarna för LLM-anropen: Jag la in spärrar så att programmet inte ens ringer modellen om det finns för få artiklar (onödigt att bränna pengar på att analysera tre ynka rubriker). Likaså finns ett maxtak så den inte skickar med en hel bibel av misstag och spränger token-gränsen.
 
-Testerna: Fick ihop fem olika testfiler med pytest där allting mockas bort i conftest.py. Testerna springer igenom blixtsnabbt utan att man behöver ha internet igång eller bränna API-krediter.
+5. Testerna: Fick ihop fem olika testfiler med pytest där allting mockas bort i conftest.py. Testerna springer igenom blixtsnabbt utan att man behöver ha internet igång eller bränna API-krediter.
 
 Vad jag lärt mig
-Web scraping är ett träsk: Man tror i sin naivitet att en RSS-feed bara är att läsa in, men tji fick jag. Ena sajten har tomma rader först, andra ljuger om teckenkodning och den tredje kastar ut dig för att du inte har rätt användaragent.
+Web scraping är ett träsk: Man tror i sin naivitet att en RSS-feed bara är att läsa in, men...inte riktigt. Ena sajten har tomma rader först, andra ljuger om teckenkodning och den tredje blockerar dig för att du inte har rätt användaragent.
 
 Trafilaturas hemliga inställningar: Att bara sätta timeout i trafilatura räckte inte. Man var tvungen att läsa in deras medföljande settings.cfg först och sen lägga sina egna värden ovanpå. Gjorde man inte det försvann bibliotekets dolda standardvärden och allt blev pannkaka. Det stod inte i manualen direkt, utan krävde en rejäl dos trial-and-error.
 
@@ -91,7 +91,7 @@ Separation of concerns på riktigt: Jag fattar grejen nu. Att separera på saker
 
 Svagheter och problem
 Den komiska elefanten i rummet (Fulltexten som aldrig används!):
-Här kommer projektets största ironi: jag sitter alltså och sliter med trafilatura, bygger timeouts och spoofar webbläsare för att tanka ner hela artiklarnas brödtext... och sen gör jag absolut ingenting med den! Min ursprungliga idé var faktiskt riktigt smart: först göra en snabb trendanalys på bara rubrikerna, och därefter göra ett till LLM-anrop där pipelinen skickar med fulltexten för de relevanta artiklarna för att summera vad nyheterna faktiskt handlade om. Men när jag sedan inser att jag använder TVÅ AI anrop, och det känns helt ärligt talat inte jättekul att använda två anrop bara för en trendanalys, så valde jag att istället bara skicka med titlarna. Men så tänkte jag inte på att jag aldrig använde nyhetstexten xD Men men, så kan det gå. Hade jag gjort om hade jag nog ändå kört två ai anrop, just för att få en så bra summering som möjligt, och även skickat med summaries i första anropet för trend-analysen.
+Här kommer projektets största ironi: jag sitter alltså och sliter med trafilatura, bygger timeouts och spoofar webbläsare för att tanka ner hela artiklarnas brödtext... och sen gör jag absolut ingenting med den! Min ursprungliga idé var faktiskt riktigt smart: först göra en snabb trendanalys på bara rubrikerna, och därefter göra ett till LLM-anrop där pipelinen skickar med fulltexten för de relevanta artiklarna för att summera vad nyheterna faktiskt handlade om. Men när jag sedan inser att jag använder TVÅ AI anrop, och det känns helt ärligt talat inte jättekul att använda två anrop bara för en trendanalys, så valde jag att istället bara skicka med titlarna. Men så tänkte jag inte på att jag aldrig använde nyhetstexten xD Men men, så kan det gå. Hade jag gjort om hade jag nog ändå kört två ai anrop, just för att få en så bra summering som möjligt, och även skickat med summaries i första anropet för trend-analysen. På grund av detta skapade jag en vibe-kodad bransh "version2" som jag tänker merga in om någon månad eller så, när bedömningen av uppgiften är färdig, där jag använder två ai anrop och får ett Mycket bättre resultat.
 
 Hängande flöden och McKinsey-kaoset:
 I början hade jag inga timeouts. När jag testade McKinseys flöde stod hela programmet och snurrade i flera minuter och bara glodde ut i tomma intet innan det gav upp. Lösningen blev att sätta hårda tidsgränser i settings.json för både feed och nedladdning.
@@ -103,7 +103,7 @@ Ingen snygg felöversikt:
 Om trafilatura misslyckas med en artikel loggas det i stunden och summeras som typ "10 av 12 lyckades". Men jag har ingen sparad tabell över vilka adresser som faktiskt sket sig. Man borde haft en tracker-tabell i SQLite som sparar länk och felorsak och spottar ut en pandas DataFrame, så man enkelt ser vilka källor som är ruttna och borde sparkas ut ur sources.json. Hinner dock inte bygga det nu.
 
 Svårt att veta om modellen yrar (hallucinationer):
-Eftersom bara rubriker skickas in just nu kan modellen mycket väl sitta och fantisera ihop trender som knappt existerar. En bootstrap-inspirerad lösning hade varit att köra flera LLM-anrop på olika slumpmässiga delar av rubrikerna och kräva att modellen listar exakt vilka rubriker den baserar varje trend på. Då kan man räkna ut hur många svar som pekar på samma källor och få ett kvitto på om trenden är på riktigt eller bara fria fantasier.
+Eftersom bara rubriker skickas in just nu kan modellen mycket väl sitta och fantisera ihop trender som knappt existerar. En bootstrap-inspirerad lösning hade varit att köra flera LLM-anrop med rubrikerna och kräva att modellen listar exakt vilka rubriker den baserar varje trend på. Då kan man räkna ut hur många svar som pekar på samma källor och få ett kvitto på om trenden är på riktigt eller bara fria fantasier.
 
 Småskavanker i koden:
 load_sources() kraschar rakt av vid trasig JSON eftersom den saknar try/except (till skillnad från load_settings()). SQLite sparar datum utan tidszoner (funkar så länge man håller sig till UTC, men inte helt vattentätt). Dessutom körs allt sekventiellt istället för asynkront med asyncio, vilket gör att det tar sin lilla tid om man skulle smacka in 50 källor till.
@@ -121,6 +121,23 @@ Betygsreflektion (G eller VG?)
 Jag tycker definitivt att det här arbetet landar på ett VG.
 
 Jag har inte bara snickrat ihop ett enkelt engångsskript, utan byggt en hel liten arkitektur som är testad, modulär och välpaketerad med src-layout och pyproject.toml. Jag kan förklara exakt varför koden ser ut som den gör: varför Feedly-bluffen behövdes mot sajtspärrarna, varför trafilatura behövde seedas från sin egen config-fil, och varför isolerad felhantering per artikel räddar hela körningen. Dessutom är jag fullt medveten om projektets svagheter (som det lite fåniga faktumet att jag skrapar fulltext utan att använda den än, och avsaknaden av aggregerad felstatistik). Projektet visar att jag har stenkoll på helheten, varför valen gjordes och vad som krävs för att bygga en robust pipeline i praktiken.
+
+Viktiga begrepp
+**RSS-flöde** — Standardiserat XML-format för att syndikera nyhetsrubriker och länkar; parsas här med `feedparser`.
+
+**feedparser** — Python-bibliotek som parsar RSS/Atom; `bozo`-flaggan signalerar trasig feed som koden då hoppar över.
+
+**trafilatura** — Bibliotek för att extrahera brödtext från HTML och rensa bort menyer/sidfötter; kräver seedad `ConfigParser` från sin `settings.cfg`.
+
+**User-Agent-spoofing** — Att skicka falsk `User-Agent`-header (Feedly för feeds, Chrome för artiklar) för att kringgå sajternas bot-blockering.
+
+**OpenAI-kompatibelt API** — API som följer OpenAI:s chat-completions-kontrakt; låter oss peka om `base_url` till evroc utan att skriva om koden.
+
+**SQLite + UNIQUE-constraint** — Lokal filbaserad databas; `UNIQUE` på `url`-kolumnen fångar dubbletter via `sqlite3.IntegrityError`.
+
+**ConfigParser-seeding** — Att läsa in trafilaturas `settings.cfg` som bas innan egna värden åsidosätts, så bibliotekets dolda standardvärden inte försvinner.
+
+**src-layout** — Paketstrukturen `src/trending_news_bot/...` som skiljer källkod från rot och kräver `pip install -e`.
 
 Källor
 trafilatura - https://trafilatura.readthedocs.io
